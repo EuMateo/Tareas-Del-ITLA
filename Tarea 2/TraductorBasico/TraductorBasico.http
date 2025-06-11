@@ -1,0 +1,6 @@
+@TraductorBasico_HostAddress = http://localhost:5215
+
+GET {{TraductorBasico_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
