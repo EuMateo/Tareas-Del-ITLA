@@ -1,96 +1,197 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TraductorBasico.Models;
-using TraductorBasico.Data;
+using TraductorBasico.Contract;
+using TraductorBasico.Dtos;
 
-
-namespace TraductorTurismoAPI.Controllers
+namespace TraductorBasico.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     public class FrasesController : ControllerBase
     {
-        private readonly TraductorBasicoDataContext _context;
+        private readonly IFraseService _fraseService;
 
-        public FrasesController(TraductorBasicoDataContext context)
+        public FrasesController(IFraseService fraseService)
         {
-            _context = context;
+            _fraseService = fraseService;
         }
 
-
-        // GET: api/Frases
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Frase>>> GetFrases()
+        public async Task<ActionResult> GetFrases()
         {
-            return await _context.Frases.ToListAsync();
+            var result = await _fraseService.GetAllFrasesAsync();
+
+            if (!result.Success)
+            {
+                return BadRequest(new
+                {
+                    message = result.Message,
+                    errors = result.Errors
+                });
+            }
+
+            return Ok(new
+            {
+                message = result.Message,
+                data = result.DataList,
+                count = result.DataList?.Count() ?? 0
+            });
         }
 
-
-
-        // GET: api/Frases/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Frase>> GetFrase(int id)
+        public async Task<ActionResult> GetFrase(int id)
         {
-            var frase = await _context.Frases.FindAsync(id);
+            var result = await _fraseService.GetFraseByIdAsync(id);
 
-            if (frase == null)
+            if (!result.Success)
             {
-                return NotFound();
+                return NotFound(new
+                {
+                    message = result.Message,
+                    errors = result.Errors
+                });
             }
 
-            return frase;
+            return Ok(new
+            {
+                message = result.Message,
+                data = result.Data
+            });
         }
 
-        // POST: api/Frases
+        [HttpGet("categoria/{categoria}")]
+        public async Task<ActionResult> GetFrasesByCategoria(string categoria)
+        {
+            var result = await _fraseService.GetFrasesByCategoriaAsync(categoria);
+
+            if (!result.Success)
+            {
+                return BadRequest(new
+                {
+                    message = result.Message,
+                    errors = result.Errors
+                });
+            }
+
+            return Ok(new
+            {
+                message = result.Message,
+                data = result.DataList,
+                categoria = categoria,
+                count = result.DataList?.Count() ?? 0
+            });
+        }
+
+       
         [HttpPost]
-        public async Task<ActionResult<Frase>> PostFrase(Frase frase)
+        public async Task<ActionResult> PostFrase(CreateFraseDto createFraseDto)
         {
-            _context.Frases.Add(frase);
-            await _context.SaveChangesAsync();
+            if (!ModelState.IsValid)
+            {
+                var modelErrors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .SelectMany(x => x.Value!.Errors)
+                    .Select(x => x.ErrorMessage)
+                    .ToList();
 
-            return CreatedAtAction(nameof(GetFrase), new { id = frase.Id }, frase);
+                return BadRequest(new
+                {
+                    message = "Errores de validación en el modelo",
+                    errors = modelErrors
+                });
+            }
+            var result = await _fraseService.CreateFraseAsync(createFraseDto);
+
+            if (!result.Success)
+            {
+                return BadRequest(new
+                {
+                    message = result.Message,
+                    errors = result.Errors
+                });
+            }
+
+            return CreatedAtAction(nameof(GetFrase),
+                new { id = result.Data!.Id },
+                new
+                {
+                    message = result.Message,
+                    data = result.Data
+                });
         }
 
-        // PUT: api/Frases/5
+       
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutFrase(int id, Frase frase)
+        public async Task<IActionResult> PutFrase(int id, UpdateFraseDto updateFraseDto)
         {
-            if (id != frase.Id)
+            if (!ModelState.IsValid)
             {
-                return BadRequest();
+                var modelErrors = ModelState
+                    .Where(x => x.Value?.Errors.Count > 0)
+                    .SelectMany(x => x.Value!.Errors)
+                    .Select(x => x.ErrorMessage)
+                    .ToList();
+
+                return BadRequest(new
+                {
+                    message = "Errores de validación en el modelo",
+                    errors = modelErrors
+                });
             }
 
-            _context.Entry(frase).State = EntityState.Modified;
+            var result = await _fraseService.UpdateFraseAsync(id, updateFraseDto);
 
-            try
+            if (!result.Success)
             {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!_context.Frases.Any(f => f.Id == id))
-                    return NotFound();
-                else
-                    throw;
+                if (result.Message.Contains("No se encontró"))
+                {
+                    return NotFound(new
+                    {
+                        message = result.Message,
+                        errors = result.Errors
+                    });
+                }
+
+                return BadRequest(new
+                {
+                    message = result.Message,
+                    errors = result.Errors
+                });
             }
 
-            return NoContent();
+            return Ok(new
+            {
+                message = result.Message,
+                data = result.Data
+            });
         }
 
-        // DELETE: api/Frases/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteFrase(int id)
         {
-            var frase = await _context.Frases.FindAsync(id);
-            if (frase == null)
+            var result = await _fraseService.DeleteFraseAsync(id);
+
+            if (!result.Success)
             {
-                return NotFound();
+                if (result.Message.Contains("No se encontró"))
+                {
+                    return NotFound(new
+                    {
+                        message = result.Message,
+                        errors = result.Errors
+                    });
+                }
+
+                return BadRequest(new
+                {
+                    message = result.Message,
+                    errors = result.Errors
+                });
             }
 
-            _context.Frases.Remove(frase);
-            await _context.SaveChangesAsync();
-
-            return NoContent();
+            return Ok(new
+            {
+                message = result.Message
+            });
         }
     }
 }

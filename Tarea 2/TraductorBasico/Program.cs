@@ -1,9 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using TraductorBasico.Data;
+using TraductorBasico.Infrastructure.Context;
+using TraductorBasico.Application.Services;
+using TraductorBasico.Contract;
+using TraductorBasico.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+
 builder.Services.AddControllers();
 
 builder.Services.AddDbContext<TraductorBasicoDataContext>(options =>
@@ -15,15 +18,17 @@ builder.Services.AddDbContext<TraductorBasicoDataContext>(options =>
             errorNumbersToAdd: null)
     ));
 
+
+builder.Services.AddScoped<IFraseService, FraseService>();
+builder.Services.AddScoped<IFraseRepository, FraseRepository>();
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
     app.UseSwagger();
     app.UseSwaggerUI();
 }
