@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traductor Básico - Turismo</title>
+    
+    <!-- Bootstrap 5.3 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- SweetAlert2 -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <!-- Custom CSS -->
+    <link href="styles.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-bg">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h1><i class="bi bi-translate"></i> Traductor Básico</h1>
+                    <p class="lead">Frases esenciales para turistas - Español ↔ Inglés</p>
+                    <p class="text-light"><i class="bi bi-calendar"></i> <span id="currentDate"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-4">
+        <!-- Navegación por pestañas -->
+        <ul class="nav nav-tabs" id="mainTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="phrases-tab" data-bs-toggle="tab" data-bs-target="#phrases" type="button" role="tab">
+                    <i class="bi bi-chat-dots"></i> Frases
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">
+                    <i class="bi bi-tags"></i> Categorías
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">
+                    <i class="bi bi-bar-chart"></i> Estadísticas
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="mainTabsContent">
+            <!-- Tab Frases -->
+            <div class="tab-pane fade show active" id="phrases" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-chat-dots"></i> Gestión de Frases</h5>
+                        <button class="btn btn-success btn-sm" id="addPhraseBtn">
+                            <i class="bi bi-plus-lg"></i> Agregar Frase
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filtros -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" id="phraseSearchInput" placeholder="Buscar frases...">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="categoryFilter">
+                                    <option value="">Todas las categorías</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-secondary" id="clearFilters">
+                                    <i class="bi bi-x-circle"></i> Limpiar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Loading -->
+                        <div id="phrasesLoading" class="text-center py-4" style="display: none;">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-2">Cargando frases...</p>
+                        </div>
+
+                        <!-- Grid de frases -->
+                        <div class="row" id="phrasesGrid">
+                            <!-- Las frases se cargarán aquí dinámicamente -->
+                        </div>
+
+                        <!-- Sin resultados -->
+                        <div id="noResults" class="text-center py-5" style="display: none;">
+                            <i class="bi bi-search display-1 text-muted"></i>
+                            <h4 class="text-muted">No se encontraron frases</h4>
+                            <p class="text-muted">Intenta con otros términos de búsqueda o categoría</p>
+                        </div>
+
+                        <!-- Paginación -->
+                        <nav aria-label="Paginación de frases">
+                            <ul class="pagination justify-content-center" id="phrasesPagination">
+                                <!-- La paginación se generará dinámicamente -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Categorías -->
+            <div class="tab-pane fade" id="categories" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-tags"></i> Frases por Categoría</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="categoriesGrid">
+                            <!-- Las categorías se cargarán aquí -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Estadísticas -->
+            <div class="tab-pane fade" id="stats" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Estadísticas del Sistema</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="card text-center stats-card">
+                                    <div class="card-body">
+                                        <i class="bi bi-chat-dots display-4 text-primary"></i>
+                                        <h4 class="mt-2" id="totalPhrasesCount">0</h4>
+                                        <p class="text-muted">Total de Frases</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center stats-card">
+                                    <div class="card-body">
+                                        <i class="bi bi-tags display-4 text-success"></i>
+                                        <h4 class="mt-2" id="totalCategoriesCount">0</h4>
+                                        <p class="text-muted">Categorías</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center stats-card">
+                                    <div class="card-body">
+                                        <i class="bi bi-star display-4 text-warning"></i>
+                                        <h4 class="mt-2" id="favoriteCategory">-</h4>
+                                        <p class="text-muted">Categoría Principal</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card text-center stats-card">
+                                    <div class="card-body">
+                                        <i class="bi bi-clock display-4 text-info"></i>
+                                        <h4 class="mt-2" id="lastUpdate">-</h4>
+                                        <p class="text-muted">Última Actualización</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal para Agregar/Editar Frase -->
+    <div class="modal fade" id="phraseModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="phraseModalTitle">
+                        <i class="bi bi-plus-lg"></i> Agregar Nueva Frase
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="phraseForm">
+                        <input type="hidden" id="phraseId" value="">
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phraseSpanish" class="form-label">
+                                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='15'%3E%3Crect width='20' height='15' fill='%23c60b1e'/%3E%3Crect width='20' height='10' y='2.5' fill='%23ffc400'/%3E%3C/svg%3E" alt="ES" class="me-2">
+                                        Español *
+                                    </label>
+                                    <input type="text" class="form-control" id="phraseSpanish" required maxlength="500">
+                                    <div class="invalid-feedback" id="spanishError"></div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="phraseEnglish" class="form-label">
+                                        <img src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='15'%3E%3Crect width='20' height='15' fill='%23012169'/%3E%3Cpath d='M0,0 L20,15 M20,0 L0,15' stroke='%23fff' stroke-width='3'/%3E%3Cpath d='M0,5 L20,5 M0,10 L20,10 M8,0 L8,15 M12,0 L12,15' stroke='%23fff' stroke-width='1'/%3E%3Cpath d='M0,7.5 L20,7.5 M10,0 L10,15' stroke='%23c8102e' stroke-width='1'/%3E%3C/svg%3E" alt="EN" class="me-2">
+                                        Inglés *
+                                    </label>
+                                    <input type="text" class="form-control" id="phraseEnglish" required maxlength="500">
+                                    <div class="invalid-feedback" id="englishError"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phrasePronunciation" class="form-label">
+                                <i class="bi bi-volume-up"></i> Pronunciación *
+                            </label>
+                            <input type="text" class="form-control" id="phrasePronunciation" required maxlength="500" placeholder="/haʊ duː juː duː/">
+                            <div class="form-text">Ingresa la pronunciación fonética entre barras: /ejemplo/</div>
+                            <div class="invalid-feedback" id="pronunciationError"></div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="phraseCategory" class="form-label">
+                                <i class="bi bi-tag"></i> Categoría *
+                            </label>
+                            <input type="text" class="form-control" id="phraseCategory" required maxlength="100" placeholder="Restaurante, Hotel, Direcciones...">
+                            <div class="form-text">Solo letras y espacios. Ej: Restaurante, Hotel, Direcciones</div>
+                            <div class="invalid-feedback" id="categoryError"></div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i> Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" id="savePhraseBtn">
+                        <i class="bi bi-save"></i> Guardar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Custom JS -->
+    <script src="app.js"></script>
+</body>
+</html>

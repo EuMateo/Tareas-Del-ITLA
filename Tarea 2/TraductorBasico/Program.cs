@@ -6,8 +6,23 @@ using TraductorBasico.Infrastructure.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
 builder.Services.AddControllers();
+
+// Agregar CORS - IMPORTANTE: antes de builder.Build()
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins(
+            "http://127.0.0.1:5500",
+            "http://localhost:3000",
+            "http://localhost:5173",
+            "http://localhost:8080"
+        )
+        .AllowAnyHeader()
+        .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddDbContext<TraductorBasicoDataContext>(options =>
     options.UseSqlServer(
@@ -17,7 +32,6 @@ builder.Services.AddDbContext<TraductorBasicoDataContext>(options =>
             maxRetryDelay: TimeSpan.FromSeconds(30),
             errorNumbersToAdd: null)
     ));
-
 
 builder.Services.AddScoped<IFraseService, FraseService>();
 builder.Services.AddScoped<IFraseRepository, FraseRepository>();
@@ -32,6 +46,9 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI();
 }
+
+// CORS debe ir ANTES de UseHttpsRedirection
+app.UseCors("AllowFrontend");
 
 app.UseHttpsRedirection();
 app.UseAuthorization();
