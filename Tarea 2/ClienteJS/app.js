@@ -1,5 +1,5 @@
 // Configuración de la API
-const API_BASE_URL = ' https://localhost:7092/api';
+const API_BASE_URL = 'https://localhost:7092/api';
 
 // Variables globales
 let allPhrases = [];
@@ -238,12 +238,33 @@ function renderPhrases() {
 
     noResults.style.display = 'none';
     
-    grid.innerHTML = paginatedPhrases.map(phrase => `
-        <div class="col-lg-6 col-md-12">
+    grid.innerHTML = paginatedPhrases.map(phrase => createPhraseCard(phrase)).join('');
+    renderPagination(filteredPhrases.length, totalPages);
+    
+    // Actualizar botones de favorito después de renderizar
+    favoritosManager.updateAllFavoritoButtons();
+}
+
+function createPhraseCard(phrase) {
+    const isFavorito = favoritosManager.isFavorito(phrase.id);
+    
+    return `
+        <div class="col-lg-6 col-md-12" data-frase-id="${phrase.id}">
             <div class="phrase-card">
                 <div class="phrase-header">
                     <span class="phrase-category">${phrase.categoria}</span>
                     <div class="phrase-actions">
+                        <button class="btn ${isFavorito ? 'btn-warning favorito-active' : 'btn-outline-warning'} btn-action favorito-btn" 
+                                onclick="favoritosManager.toggleFavorito({
+                                    id: ${phrase.id},
+                                    español: '${escapeHtml(phrase.español)}',
+                                    ingles: '${escapeHtml(phrase.ingles)}',
+                                    pronunciacion: '${escapeHtml(phrase.pronunciacion)}',
+                                    categoria: '${escapeHtml(phrase.categoria)}'
+                                })" 
+                                title="${isFavorito ? 'Remover de favoritos' : 'Agregar a favoritos'}">
+                            <i class="bi ${isFavorito ? 'bi-heart-fill' : 'bi-heart'}"></i>
+                        </button>
                         <button class="btn btn-primary btn-action" onclick="editPhrase(${phrase.id})" title="Editar">
                             <i class="bi bi-pencil"></i>
                         </button>
@@ -273,9 +294,7 @@ function renderPhrases() {
                 </div>
             </div>
         </div>
-    `).join('');
-
-    renderPagination(filteredPhrases.length, totalPages);
+    `;
 }
 
 function renderCategories() {
@@ -472,8 +491,27 @@ function confirmDeletePhrase(id) {
         if (result.isConfirmed) {
             const success = await deletePhrase(id);
             if (success) {
+                // También remover de favoritos si estaba
+                favoritosManager.removeFavorito(id);
                 await loadPhrases();
             }
+        }
+    });
+}
+
+function confirmClearFavoritos() {
+    Swal.fire({
+        title: '¿Limpiar todos los favoritos?',
+        text: "Esta acción eliminará todas las frases favoritas",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#dc3545',
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: 'Sí, limpiar todo',
+        cancelButtonText: 'Cancelar'
+    }).then((result) => {
+        if (result.isConfirmed) {
+            favoritosManager.clearFavoritos();
         }
     });
 }
@@ -579,6 +617,7 @@ async function loadPhrases(category = '') {
     renderPhrases();
     updateCategoryFilter();
     updateStats();
+    favoritosManager.updateFavoritosCount();
 }
 
 function escapeHtml(text) {
@@ -600,6 +639,9 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Cargar datos iniciales
     await loadPhrases();
     
+    // Inicializar favoritos
+    favoritosManager.updateFavoritosCount();
+    
     // Event listeners para filtros
     document.getElementById('phraseSearchInput').addEventListener('input', debounce(() => {
         currentPage = 1;
@@ -617,6 +659,36 @@ document.addEventListener('DOMContentLoaded', async function() {
         currentPage = 1;
         renderPhrases();
     });
+    
+    // Event listeners para diccionario
+    const diccionarioSearchInput = document.getElementById('diccionarioSearchInput');
+    if (diccionarioSearchInput) {
+        diccionarioSearchInput.addEventListener('input', debounce(() => {
+            diccionarioManager.searchImagenes(diccionarioSearchInput.value);
+        }, 300));
+    }
+    
+    const diccionarioCategoryFilter = document.getElementById('diccionarioCategoryFilter');
+    if (diccionarioCategoryFilter) {
+        diccionarioCategoryFilter.addEventListener('change', () => {
+            diccionarioManager.filterByCategory(diccionarioCategoryFilter.value);
+        });
+    }
+    
+    const clearDiccionarioFilters = document.getElementById('clearDiccionarioFilters');
+    if (clearDiccionarioFilters) {
+        clearDiccionarioFilters.addEventListener('click', () => {
+            diccionarioManager.clearFilters();
+        });
+    }
+    
+    // Event listeners para favoritos
+    const favoritosSearchInput = document.getElementById('favoritosSearchInput');
+    if (favoritosSearchInput) {
+        favoritosSearchInput.addEventListener('input', debounce(() => {
+            favoritosManager.searchFavoritos(favoritosSearchInput.value);
+        }, 300));
+    }
     
     // Event listener para agregar frase
     document.getElementById('addPhraseBtn').addEventListener('click', () => {
@@ -659,13 +731,28 @@ document.addEventListener('DOMContentLoaded', async function() {
     
     // Event listener para tabs
     document.querySelectorAll('[data-bs-toggle="tab"]').forEach(tab => {
-        tab.addEventListener('shown.bs.tab', (e) => {
+        tab.addEventListener('shown.bs.tab', async (e) => {
             const targetId = e.target.getAttribute('data-bs-target');
             
             if (targetId === '#categories') {
                 renderCategories();
             } else if (targetId === '#stats') {
                 updateStats();
+            } else if (targetId === '#favorites') {
+                favoritosManager.renderFavoritos();
+                
+                // Mostrar/ocultar controles según haya favoritos
+                const hasItems = favoritosManager.getFavoritos().length > 0;
+                const statsElement = document.getElementById('favoritosStats');
+                const controlsElement = document.getElementById('favoritosControls');
+                
+                if (statsElement) statsElement.style.display = hasItems ? 'block' : 'none';
+                if (controlsElement) controlsElement.style.display = hasItems ? 'block' : 'none';
+                
+            } else if (targetId === '#diccionario') {
+                await diccionarioManager.loadImagenes();
+                await diccionarioManager.updateDiccionarioCategoryFilter();
+                diccionarioManager.renderImagenes();
             }
         });
     });
@@ -680,5 +767,5 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     });
     
-    console.log('Traductor Básico inicializado correctamente');
+    console.log('Traductor Básico inicializado correctamente con Favoritos y Diccionario Visual');
 });

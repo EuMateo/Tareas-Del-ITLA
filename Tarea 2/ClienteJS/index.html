@@ -38,6 +38,17 @@
                 </button>
             </li>
             <li class="nav-item" role="presentation">
+                <button class="nav-link" id="diccionario-tab" data-bs-toggle="tab" data-bs-target="#diccionario" type="button" role="tab">
+                    <i class="bi bi-images"></i> Diccionario Visual
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="favorites-tab" data-bs-toggle="tab" data-bs-target="#favorites" type="button" role="tab">
+                    <i class="bi bi-heart"></i> Favoritos
+                    <span class="badge bg-danger ms-1" id="favoritosCount" style="display: none;">0</span>
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
                 <button class="nav-link" id="categories-tab" data-bs-toggle="tab" data-bs-target="#categories" type="button" role="tab">
                     <i class="bi bi-tags"></i> Categorías
                 </button>
@@ -106,6 +117,129 @@
                                 <!-- La paginación se generará dinámicamente -->
                             </ul>
                         </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Diccionario Visual -->
+            <div class="tab-pane fade" id="diccionario" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header">
+                        <h5 class="mb-0"><i class="bi bi-images"></i> Diccionario Visual</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Filtros del Diccionario -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" id="diccionarioSearchInput" placeholder="Buscar imágenes...">
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <select class="form-select" id="diccionarioCategoryFilter">
+                                    <option value="">Todas las categorías</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3">
+                                <button class="btn btn-outline-secondary" id="clearDiccionarioFilters">
+                                    <i class="bi bi-x-circle"></i> Limpiar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Grid de imágenes -->
+                        <div class="row" id="diccionarioGrid">
+                            <!-- Las imágenes se cargarán aquí dinámicamente -->
+                        </div>
+
+                        <!-- Sin resultados -->
+                        <div id="noDiccionarioResults" class="text-center py-5" style="display: none;">
+                            <i class="bi bi-images display-1 text-muted"></i>
+                            <h4 class="text-muted">No se encontraron imágenes</h4>
+                            <p class="text-muted">Intenta con otros términos de búsqueda o categoría</p>
+                        </div>
+
+                        <!-- Paginación -->
+                        <nav aria-label="Paginación de diccionario">
+                            <ul class="pagination justify-content-center" id="diccionarioPagination">
+                                <!-- La paginación se generará dinámicamente -->
+                            </ul>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tab Favoritos -->
+            <div class="tab-pane fade" id="favorites" role="tabpanel">
+                <div class="card mt-3">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0"><i class="bi bi-heart"></i> Mis Frases Favoritas</h5>
+                        <div class="btn-group">
+                            <button class="btn btn-outline-primary btn-sm" id="exportFavoritosBtn" onclick="favoritosManager.exportFavoritos()">
+                                <i class="bi bi-download"></i> Exportar
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm" id="clearFavoritosBtn" onclick="confirmClearFavoritos()">
+                                <i class="bi bi-trash"></i> Limpiar Todo
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <!-- Estadísticas de favoritos -->
+                        <div id="favoritosStats" class="row mb-4" style="display: none;">
+                            <div class="col-md-4">
+                                <div class="card text-center bg-light">
+                                    <div class="card-body py-3">
+                                        <i class="bi bi-heart-fill text-danger fs-2"></i>
+                                        <h6 class="mt-2" id="totalFavoritosCount">0</h6>
+                                        <small class="text-muted">Total Favoritos</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center bg-light">
+                                    <div class="card-body py-3">
+                                        <i class="bi bi-tags-fill text-info fs-2"></i>
+                                        <h6 class="mt-2" id="categoriasFavoritasCount">0</h6>
+                                        <small class="text-muted">Categorías</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card text-center bg-light">
+                                    <div class="card-body py-3">
+                                        <i class="bi bi-clock-fill text-warning fs-2"></i>
+                                        <h6 class="mt-2 text-truncate" id="favoritoReciente">-</h6>
+                                        <small class="text-muted">Más Reciente</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Búsqueda en favoritos -->
+                        <div class="row mb-3" id="favoritosControls" style="display: none;">
+                            <div class="col-md-4">
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" class="form-control" id="favoritosSearchInput" placeholder="Buscar en favoritos...">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Grid de favoritos -->
+                        <div class="row" id="favoritosGrid">
+                            <!-- Los favoritos se cargarán aquí dinámicamente -->
+                        </div>
+
+                        <!-- Sin favoritos -->
+                        <div id="noFavoritos" class="text-center py-5">
+                            <i class="bi bi-heart display-1 text-muted"></i>
+                            <h4 class="text-muted">No tienes favoritos aún</h4>
+                            <p class="text-muted">Agrega frases a favoritos haciendo clic en el ícono del corazón</p>
+                            <button class="btn btn-primary" onclick="document.getElementById('phrases-tab').click()">
+                                <i class="bi bi-chat-dots"></i> Explorar Frases
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -243,10 +377,31 @@
         </div>
     </div>
 
+    <!-- Modal para Diccionario Visual -->
+    <div class="modal fade" id="diccionarioModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header" id="diccionarioModalTitle">
+                    <!-- El contenido se generará dinámicamente -->
+                </div>
+                <div class="modal-body" id="diccionarioModalBody">
+                    <!-- El contenido se generará dinámicamente -->
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-lg"></i> Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Custom JS -->
+    <script src="favoritos.js"></script>
+    <script src="diccionario.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

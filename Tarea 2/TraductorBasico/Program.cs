@@ -33,8 +33,13 @@ builder.Services.AddDbContext<TraductorBasicoDataContext>(options =>
             errorNumbersToAdd: null)
     ));
 
+// Servicios existentes
 builder.Services.AddScoped<IFraseService, FraseService>();
 builder.Services.AddScoped<IFraseRepository, FraseRepository>();
+
+// Nuevos servicios para diccionario
+builder.Services.AddScoped<IDiccionarioService, DiccionarioService>();
+builder.Services.AddScoped<IImagenDiccionarioRepository, ImagenDiccionarioRepository>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
