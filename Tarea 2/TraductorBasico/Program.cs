@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using TraductorBasico.Infrastructure.Data;
 using TraductorBasico.Infrastructure.Context;
 using TraductorBasico.Application.Services;
 using TraductorBasico.Contract;
@@ -45,6 +46,25 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+// Seed de la base de datos
+using (var scope = app.Services.CreateScope())
+{
+    var context = scope.ServiceProvider.GetRequiredService<TraductorBasicoDataContext>();
+    try
+    {
+        // Aplicar migraciones pendientes
+        await context.Database.MigrateAsync();
+
+        // Ejecutar seeder
+        await DatabaseSeeder.SeedAsync(context);
+    }
+    catch (Exception ex)
+    {
+        var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred while seeding the database.");
+    }
+}
 
 if (app.Environment.IsDevelopment())
 {

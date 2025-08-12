@@ -11,28 +11,28 @@ class DiccionarioManager {
     async loadImagenes(categoria = '') {
         try {
             showLoading(true);
-            
+
             let url = `${API_BASE_URL}/diccionario/imagenes`;
             if (categoria && categoria !== '') {
                 url += `/categoria/${encodeURIComponent(categoria)}`;
             }
 
             const response = await fetch(url);
-            
+
             if (!response.ok) {
                 throw new Error(`Error HTTP: ${response.status}`);
             }
 
             const result = await response.json();
-            
+
             if (result.data) {
                 this.imagenes = Array.isArray(result.data) ? result.data : [result.data];
             } else {
                 this.imagenes = [];
             }
-            
+
             return this.imagenes;
-            
+
         } catch (error) {
             console.error('Error loading diccionario images:', error);
             showError('Error al cargar las imágenes del diccionario: ' + error.message);
@@ -47,14 +47,14 @@ class DiccionarioManager {
     async loadImagenWithFrases(imagenId) {
         try {
             const response = await fetch(`${API_BASE_URL}/diccionario/imagenes/${imagenId}/frases`);
-            
+
             if (!response.ok) {
                 throw new Error('Imagen no encontrada');
             }
 
             const result = await response.json();
             return result.data;
-            
+
         } catch (error) {
             showError('Error al cargar la imagen: ' + error.message);
             return null;
@@ -65,14 +65,14 @@ class DiccionarioManager {
     async loadCategorias() {
         try {
             const response = await fetch(`${API_BASE_URL}/diccionario/categorias`);
-            
+
             if (!response.ok) {
                 throw new Error('Error al cargar categorías');
             }
 
             const result = await response.json();
             return result.data || [];
-            
+
         } catch (error) {
             console.error('Error loading categorias:', error);
             return [];
@@ -85,16 +85,16 @@ class DiccionarioManager {
         const noResults = document.getElementById('noDiccionarioResults');
         const searchTerm = document.getElementById('diccionarioSearchInput')?.value.toLowerCase().trim() || '';
         const categoryFilter = document.getElementById('diccionarioCategoryFilter')?.value || '';
-        
+
         // Filtrar imágenes
         let filteredImagenes = this.imagenes.filter(imagen => {
-            const matchSearch = !searchTerm || 
+            const matchSearch = !searchTerm ||
                 imagen.nombre.toLowerCase().includes(searchTerm) ||
                 imagen.descripcion.toLowerCase().includes(searchTerm) ||
                 imagen.categoria.toLowerCase().includes(searchTerm);
-            
+
             const matchCategory = !categoryFilter || imagen.categoria === categoryFilter;
-            
+
             return matchSearch && matchCategory;
         });
 
@@ -112,7 +112,7 @@ class DiccionarioManager {
         }
 
         if (noResults) noResults.style.display = 'none';
-        
+
         grid.innerHTML = paginatedImagenes.map(imagen => this.createImagenCard(imagen)).join('');
         this.renderDiccionarioPagination(filteredImagenes.length, totalPages);
     }
@@ -200,9 +200,10 @@ class DiccionarioManager {
         }
     }
 
-    // Crear card de frase en el modal
+    // Crear card de frase en el modal usando data attributes
     createModalFraseCard(frase) {
         const isFavorito = favoritosManager.isFavorito(frase.id);
+
         return `
             <div class="col-12 mb-3" data-frase-id="${frase.id}">
                 <div class="modal-phrase-card">
@@ -223,14 +224,22 @@ class DiccionarioManager {
                         <div class="modal-phrase-row">
                             <div class="phrase-flag flag-es"></div>
                             <span class="phrase-text">${escapeHtml(frase.español)}</span>
-                            <button class="play-btn" onclick="speakText('${escapeHtml(frase.español)}', 'es')" title="Escuchar en español">
+                            <button class="play-btn" 
+                                    data-text="${escapeHtml(frase.español)}" 
+                                    data-lang="es"
+                                    onclick="speakFromData(this)" 
+                                    title="Escuchar en español">
                                 <i class="bi bi-volume-up"></i>
                             </button>
                         </div>
                         <div class="modal-phrase-row">
                             <div class="phrase-flag flag-en"></div>
                             <span class="phrase-text">${escapeHtml(frase.ingles)}</span>
-                            <button class="play-btn" onclick="speakText('${escapeHtml(frase.ingles)}', 'en')" title="Escuchar en inglés">
+                            <button class="play-btn" 
+                                    data-text="${escapeHtml(frase.ingles)}" 
+                                    data-lang="en"
+                                    onclick="speakFromData(this)" 
+                                    title="Escuchar en inglés">
                                 <i class="bi bi-volume-up"></i>
                             </button>
                         </div>
@@ -246,14 +255,14 @@ class DiccionarioManager {
     // Renderizar paginación del diccionario
     renderDiccionarioPagination(totalItems, totalPages) {
         const pagination = document.getElementById('diccionarioPagination');
-        
+
         if (!pagination || totalPages <= 1) {
             if (pagination) pagination.innerHTML = '';
             return;
         }
 
         let html = '';
-        
+
         // Botón anterior
         if (this.currentPage > 1) {
             html += `
@@ -264,18 +273,18 @@ class DiccionarioManager {
                 </li>
             `;
         }
-        
+
         // Páginas
         const startPage = Math.max(1, this.currentPage - 2);
         const endPage = Math.min(totalPages, this.currentPage + 2);
-        
+
         if (startPage > 1) {
             html += `<li class="page-item"><a class="page-link" href="#" onclick="diccionarioManager.changePage(1)">1</a></li>`;
             if (startPage > 2) {
                 html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
             }
         }
-        
+
         for (let i = startPage; i <= endPage; i++) {
             html += `
                 <li class="page-item ${i === this.currentPage ? 'active' : ''}">
@@ -283,14 +292,14 @@ class DiccionarioManager {
                 </li>
             `;
         }
-        
+
         if (endPage < totalPages) {
             if (endPage < totalPages - 1) {
                 html += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
             }
             html += `<li class="page-item"><a class="page-link" href="#" onclick="diccionarioManager.changePage(${totalPages})">${totalPages}</a></li>`;
         }
-        
+
         // Botón siguiente
         if (this.currentPage < totalPages) {
             html += `
@@ -301,7 +310,7 @@ class DiccionarioManager {
                 </li>
             `;
         }
-        
+
         pagination.innerHTML = html;
     }
 
@@ -318,16 +327,16 @@ class DiccionarioManager {
 
         const categorias = await this.loadCategorias();
         const currentValue = select.value;
-        
+
         select.innerHTML = '<option value="">Todas las categorías</option>';
-        
+
         categorias.forEach(categoria => {
             const option = document.createElement('option');
             option.value = categoria.categoria;
             option.textContent = `${categoria.categoria} (${categoria.cantidadFrases})`;
             select.appendChild(option);
         });
-        
+
         select.value = currentValue;
     }
 
@@ -348,13 +357,50 @@ class DiccionarioManager {
     clearFilters() {
         const searchInput = document.getElementById('diccionarioSearchInput');
         const categoryFilter = document.getElementById('diccionarioCategoryFilter');
-        
+
         if (searchInput) searchInput.value = '';
         if (categoryFilter) categoryFilter.value = '';
-        
+
         this.currentCategory = '';
         this.currentPage = 1;
         this.renderImagenes();
+    }
+}
+
+// Funciones externas a la clase
+function speakFromData(button) {
+    const text = button.getAttribute('data-text');
+    const lang = button.getAttribute('data-lang');
+
+    if (!text) return;
+
+    speakTextSafe(text, lang);
+}
+
+function speakTextSafe(text, language = 'en') {
+    if (!('speechSynthesis' in window)) {
+        console.warn('Tu navegador no soporta síntesis de voz');
+        return;
+    }
+
+    try {
+        const cleanText = text.trim();
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = language === 'es' ? 'es-ES' : 'en-US';
+        utterance.rate = 0.8;
+        utterance.pitch = 1;
+        utterance.volume = 1;
+
+        utterance.onerror = function (event) {
+            console.error('Error en síntesis de voz:', event.error);
+        };
+
+        window.speechSynthesis.speak(utterance);
+
+    } catch (error) {
+        console.error('Error al reproducir texto:', error);
     }
 }
 

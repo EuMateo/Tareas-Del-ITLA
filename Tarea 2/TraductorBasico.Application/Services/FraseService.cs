@@ -55,9 +55,9 @@ namespace TraductorBasico.Application.Services
             if (!validationResult.IsValid)
                 return FraseResponseDto.ErrorResponse(validationResult.Errors);
 
-            var customErrors = ValidateCustomBusinessRules(createFraseDto);
-            if (customErrors.Any())
-                return FraseResponseDto.ErrorResponse(customErrors);
+            //var customErrors = ValidateCustomBusinessRules(createFraseDto);
+            //if (customErrors.Any())
+            //    return FraseResponseDto.ErrorResponse(customErrors);
 
             try
             {
@@ -93,9 +93,9 @@ namespace TraductorBasico.Application.Services
             if (!validationResult.IsValid)
                 return FraseResponseDto.ErrorResponse(validationResult.Errors);
 
-            var customErrors = ValidateCustomBusinessRules(updateFraseDto);
-            if (customErrors.Any())
-                return FraseResponseDto.ErrorResponse(customErrors);
+            //var customErrors = ValidateCustomBusinessRules(updateFraseDto);
+            //if (customErrors.Any())
+            //    return FraseResponseDto.ErrorResponse(customErrors);
 
             try
             {
@@ -212,12 +212,12 @@ namespace TraductorBasico.Application.Services
                     errors.Add("La categoría no puede estar vacía o contener solo espacios");
 
                 if (!string.IsNullOrWhiteSpace(createDto.Español) &&
-                    System.Text.RegularExpressions.Regex.IsMatch(createDto.Español, @"[<>""'&]"))
-                    errors.Add("El campo en Español no puede contener caracteres especiales como <, >, \", ', &");
+                    System.Text.RegularExpressions.Regex.IsMatch(createDto.Español, @"[<>]"))
+                    errors.Add("El campo en Español no puede contener caracteres como < o >");
 
                 if (!string.IsNullOrWhiteSpace(createDto.Ingles) &&
-                    System.Text.RegularExpressions.Regex.IsMatch(createDto.Ingles, @"[<>""'&]"))
-                    errors.Add("El campo en Inglés no puede contener caracteres especiales como <, >, \", ', &");
+                    System.Text.RegularExpressions.Regex.IsMatch(createDto.Ingles, @"[<>]"))
+                    errors.Add("El campo en Inglés no puede contener caracteres como < o >");
             }
 
             if (dto is UpdateFraseDto updateDto)
@@ -235,12 +235,12 @@ namespace TraductorBasico.Application.Services
                     errors.Add("La categoría no puede estar vacía o contener solo espacios");
 
                 if (!string.IsNullOrWhiteSpace(updateDto.Español) &&
-                    System.Text.RegularExpressions.Regex.IsMatch(updateDto.Español, @"[<>""'&]"))
-                    errors.Add("El campo en Español no puede contener caracteres especiales como <, >, \", ', &");
+                    System.Text.RegularExpressions.Regex.IsMatch(updateDto.Español, @"[<>]"))
+                    errors.Add("El campo en Español no puede contener caracteres como < o >");
 
                 if (!string.IsNullOrWhiteSpace(updateDto.Ingles) &&
-                    System.Text.RegularExpressions.Regex.IsMatch(updateDto.Ingles, @"[<>""'&]"))
-                    errors.Add("El campo en Inglés no puede contener caracteres especiales como <, >, \", ', &");
+                    System.Text.RegularExpressions.Regex.IsMatch(updateDto.Ingles, @"[<>]"))
+                    errors.Add("El campo en Inglés no puede contener caracteres como < o >");
             }
 
             return errors;

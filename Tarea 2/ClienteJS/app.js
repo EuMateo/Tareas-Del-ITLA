@@ -277,14 +277,14 @@ function createPhraseCard(phrase) {
                     <div class="phrase-row">
                         <div class="phrase-flag flag-es"></div>
                         <span class="phrase-text">${escapeHtml(phrase.español)}</span>
-                        <button class="play-btn" onclick="speakText('${escapeHtml(phrase.español)}', 'es')" title="Escuchar en español">
+                        <button class="play-btn" onclick="speakTextSafe(\`${phrase.español}\`, 'es')" title="Escuchar en español">
                             <i class="bi bi-volume-up"></i>
                         </button>
                     </div>
                     <div class="phrase-row">
                         <div class="phrase-flag flag-en"></div>
                         <span class="phrase-text">${escapeHtml(phrase.ingles)}</span>
-                        <button class="play-btn" onclick="speakText('${escapeHtml(phrase.ingles)}', 'en')" title="Escuchar en inglés">
+                        <button class="play-btn" onclick="speakTextSafe(\`${phrase.ingles}\`, 'en')" title="Escuchar en inglés">
                             <i class="bi bi-volume-up"></i>
                         </button>
                     </div>
@@ -516,15 +516,91 @@ function confirmClearFavoritos() {
     });
 }
 
-function speakText(text, lang) {
-    if ('speechSynthesis' in window) {
-        const utterance = new SpeechSynthesisUtterance(text);
-        utterance.lang = lang === 'es' ? 'es-ES' : 'en-US';
+// Función mejorada para reproducir texto con mejor manejo de caracteres especiales
+function speakText(text, language = 'en') {
+    // Verificar si el navegador soporta síntesis de voz
+    if (!('speechSynthesis' in window)) {
+        console.warn('Tu navegador no soporta síntesis de voz');
+        showError('Tu navegador no soporta reproducción de audio');
+        return;
+    }
+
+    try {
+        // Limpiar el texto de caracteres problemáticos pero mantener el significado
+        const cleanText = text
+            .trim()
+            .replace(/'/g, "'") // Reemplazar comillas tipográficas con comillas normales
+            .replace(/"/g, '"') // Reemplazar comillas dobles tipográficas
+            .replace(/[<>]/g, '') // Remover < y >
+            .replace(/&/g, 'and') // Reemplazar & con 'and'
+            .replace(/\s+/g, ' '); // Normalizar espacios múltiples
+
+        // Detener cualquier síntesis de voz en curso
+        window.speechSynthesis.cancel();
+
+        // Crear nueva instancia de síntesis
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        
+        // Configurar el idioma
+        utterance.lang = language === 'es' ? 'es-ES' : 'en-US';
+        
+        // Configuraciones de voz
+        utterance.rate = 0.8; // Velocidad (0.1 a 10)
+        utterance.pitch = 1; // Tono (0 a 2)
+        utterance.volume = 1; // Volumen (0 a 1)
+
+        // Eventos para debugging
+        utterance.onstart = function() {
+            console.log(`Reproduciendo: "${cleanText}" en ${language}`);
+        };
+
+        utterance.onerror = function(event) {
+            console.error('Error en síntesis de voz:', event.error);
+            showError('Error al reproducir el audio');
+        };
+
+        utterance.onend = function() {
+            console.log('Reproducción completada');
+        };
+
+        // Reproducir
+        window.speechSynthesis.speak(utterance);
+
+    } catch (error) {
+        console.error('Error al procesar texto para síntesis:', error);
+        showError('Error al procesar el texto para reproducción');
+    }
+}
+
+// Función alternativa que usa escape HTML pero preserva el texto original
+function speakTextSafe(text, language = 'en') {
+    if (!('speechSynthesis' in window)) {
+        console.warn('Tu navegador no soporta síntesis de voz');
+        return;
+    }
+
+    try {
+        // Decodificar entidades HTML si las hay
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = text;
+        const decodedText = tempDiv.textContent || tempDiv.innerText;
+
+        window.speechSynthesis.cancel();
+
+        const utterance = new SpeechSynthesisUtterance(decodedText);
+        utterance.lang = language === 'es' ? 'es-ES' : 'en-US';
         utterance.rate = 0.8;
         utterance.pitch = 1;
-        speechSynthesis.speak(utterance);
-    } else {
-        showError('Tu navegador no soporta síntesis de voz');
+        utterance.volume = 1;
+
+        utterance.onerror = function(event) {
+            console.error('Error en síntesis de voz:', event.error);
+        };
+
+        window.speechSynthesis.speak(utterance);
+
+    } catch (error) {
+        console.error('Error al reproducir texto:', error);
     }
 }
 
@@ -589,17 +665,17 @@ function validateForm(data) {
         isValid = false;
     }
 
-    // Validar caracteres especiales
-    const specialChars = /[<>"'&]/;
-    if (data.español && specialChars.test(data.español)) {
-        showFieldError('spanishError', 'No se permiten caracteres especiales como <, >, ", \', &');
+   // Validar solo caracteres realmente peligrosos
+const dangerousChars = /[<>]/;
+    if (data.español && dangerousChars.test(data.español)) {
+        showFieldError('spanishError', 'No se permiten caracteres como < o >');
         isValid = false;
-    }
+}
 
-    if (data.ingles && specialChars.test(data.ingles)) {
-        showFieldError('englishError', 'No se permiten caracteres especiales como <, >, ", \', &');
+    if (data.ingles && dangerousChars.test(data.ingles)) {
+        showFieldError('englishError', 'No se permiten caracteres como < o >');
         isValid = false;
-    }
+}
 
     // Validar categoría (solo letras y espacios)
     const categoryRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑ\s]+$/;
